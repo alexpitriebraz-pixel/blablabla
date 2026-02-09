@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(echo:*)",
+      "Read(//c//**)",
+      "Bash(env)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(npm view:*)",
+      "Bash(npm audit:*)",
+      "Bash(node:*)",
+      "Bash(npx cap:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}

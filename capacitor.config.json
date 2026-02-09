@@ -1,0 +1,15 @@
+{
+  "appId": "com.blablabla.app",
+  "appName": "BlaBlaBla",
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#08090f"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#08090f"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "blablabla",
+  "private": true,
+  "scripts": {
+    "prepare-web": "node prepare.js",
+    "android": "node prepare.js && npx cap sync android && npx cap open android",
+    "ios": "node prepare.js && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0"
+  }
+}
