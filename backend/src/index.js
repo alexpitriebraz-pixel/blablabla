@@ -76,14 +76,37 @@ const syncNTP = () =>
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0'; // Necessário para Render.com
 
+console.log('[Checkpoint 1/6] Iniciando servidor...');
+console.log(`[Checkpoint] PORT=${PORT}, HOST=${HOST}`);
+
 (async () => {
-  initFirebase();
-  await connectDB();
+  try {
+    console.log('[Checkpoint 2/6] Inicializando Firebase...');
+    initFirebase();
+    console.log('[Checkpoint 2/6] ✓ Firebase inicializado');
 
-  ntpOffset = await syncNTP();
-  setupRoomSockets(io, getNtpTime, () => ntpOffset);
+    console.log('[Checkpoint 3/6] Conectando ao MongoDB...');
+    await connectDB();
+    console.log('[Checkpoint 3/6] ✓ MongoDB conectado');
 
-  httpServer.listen(PORT, HOST, () => {
-    console.log(`[Server] BlaBlaBla rodando em ${HOST}:${PORT}`);
-  });
+    console.log('[Checkpoint 4/6] Sincronizando NTP...');
+    ntpOffset = await syncNTP();
+    console.log(`[Checkpoint 4/6] ✓ NTP sincronizado (offset: ${ntpOffset}ms)`);
+
+    console.log('[Checkpoint 5/6] Configurando Socket.IO...');
+    setupRoomSockets(io, getNtpTime, () => ntpOffset);
+    console.log('[Checkpoint 5/6] ✓ Socket.IO configurado');
+
+    console.log('[Checkpoint 6/6] Iniciando servidor HTTP...');
+    httpServer.listen(PORT, HOST, () => {
+      console.log(`[Checkpoint 6/6] ✓ Servidor rodando em ${HOST}:${PORT}`);
+      console.log('========================================');
+      console.log('🎉 SERVIDOR ONLINE E PRONTO!');
+      console.log('========================================');
+    });
+  } catch (error) {
+    console.error('❌ ERRO FATAL:', error);
+    console.error('Stack:', error.stack);
+    process.exit(1);
+  }
 })();
