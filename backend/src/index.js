@@ -32,6 +32,9 @@ app.use('/api/users',   usersRouter);
 app.use('/api/rooms',   roomsRouter);
 app.use('/api/youtube', youtubeRouter);
 
+// Serve arquivos públicos (privacy policy, etc.)
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Serve arquivos estáticos da raiz do projeto (index.html, app.html)
 app.use(express.static(path.join(__dirname, '../../')));
 
@@ -71,6 +74,7 @@ const syncNTP = () =>
 
 // ── Arranque ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Necessário para Render.com
 
 (async () => {
   initFirebase();
@@ -79,7 +83,7 @@ const PORT = process.env.PORT || 3000;
   ntpOffset = await syncNTP();
   setupRoomSockets(io, getNtpTime, () => ntpOffset);
 
-  httpServer.listen(PORT, () => {
-    console.log(`[Server] BlaBlaBla rodando na porta ${PORT}`);
+  httpServer.listen(PORT, HOST, () => {
+    console.log(`[Server] BlaBlaBla rodando em ${HOST}:${PORT}`);
   });
 })();
