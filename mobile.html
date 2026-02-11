@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BlaBlaBla</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-auth-compat.js"></script>
+  <!-- Socket.IO Client -->
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
+
+  <style>
+    /* ─── Reset ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --purple: #7c3aed;
+      --pink: #ec4899;
+      --bg: #08090f;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #fff;
+      --text-muted: rgba(255,255,255,0.45);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+      overflow: hidden;
+    }
+
+    /* ─── Gradient text utility ─── */
+    .grad-text {
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ─── Screens ─── */
+    .screen { display: none; height: 100vh; height: 100dvh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ═══════════════════════════════════════════
+       LOGIN
+       ═══════════════════════════════════════════ */
+    #screen-login {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    #screen-login::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: -200px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    #screen-login::after {
+      content: '';
+      position: absolute;
+      bottom: -200px; right: -200px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .login-content { position: relative; z-index: 1; width: 100%; max-width: 320px; }
+
+    /* Logo: chat bubble + sound bars */
+    .app-logo {
+      width: 80px; height: 80px;
+      margin: 0 auto 12px;
+      position: relative;
+    }
+    .app-logo svg { width: 100%; height: 100%; }
+
+    .login-title {
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .login-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 48px;
+    }
+    .login-buttons { display: flex; flex-direction: column; gap: 12px; }
+    .login-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 14px 24px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .login-btn:active {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(124,58,237,0.4);
+      transform: scale(0.98);
+    }
+    .login-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    /* ═══════════════════════════════════════════
+       NAV BAR (shared by Home & Room)
+       ═══════════════════════════════════════════ */
+    .nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      padding-top: calc(10px + var(--safe-top));
+      background: rgba(8,9,15,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      min-height: 64px;
+    }
+    .nav-left, .nav-right { flex: 1; display: flex; align-items: center; }
+    .nav-left { justify-content: flex-start; }
+    .nav-right { justify-content: flex-end; }
+    .nav-center { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .nav-logo { width: 32px; height: 32px; }
+    .nav-logo svg { width: 100%; height: 100%; }
+    .nav-brand { font-size: 11px; font-weight: 700; line-height: 1; }
+
+    /* Avatar + dropdown */
+    .avatar-wrap { position: relative; }
+    .avatar-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      border: none;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatar-dropdown {
+      display: none;
+      position: absolute;
+      top: 44px; right: 0;
+      min-width: 160px;
+      background: #1a1b25;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      overflow: hidden;
+      z-index: 50;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+    .avatar-dropdown.open { display: block; }
+    .avatar-dropdown .dd-name {
+      padding: 14px 18px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .avatar-dropdown .dd-logout {
+      padding: 12px 18px;
+      font-size: 14px;
+      color: #ef4444;
+      cursor: pointer;
+    }
+    .avatar-dropdown .dd-logout:active { background: rgba(239,68,68,0.1); }
+
+    /* Back button */
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--purple);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Room code badge (tap to copy) */
+    .room-code-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 12px;
+      color: var(--purple);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .room-code-btn .copy-icon { font-size: 12px; opacity: 0.6; }
+
+    /* ═══════════════════════════════════════════
+       HOME
+       ═══════════════════════════════════════════ */
+    #screen-home .home-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      padding-bottom: calc(2rem + var(--safe-bottom));
+      gap: 20px;
+    }
+    .home-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .home-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+    }
+    .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: transform 0.1s;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .input-row { display: flex; gap: 10px; }
+    .input-row input {
+      flex: 1;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      color: white;
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    .input-row input:focus { border-color: rgba(124,58,237,0.5); }
+    .input-row input::placeholder { color: rgba(255,255,255,0.28); letter-spacing: 1px; text-transform: none; }
+    .input-row button {
+      padding: 14px 22px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════
+       ROOM
+       ═══════════════════════════════════════════ */
+    .room-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: calc(16px + var(--safe-bottom));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Player */
+    .player-wrapper {
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      background: #111218;
+    }
+    .player-wrapper > div { width: 100% !important; height: 100% !important; }
+    .player-wrapper iframe { width: 100% !important; height: 100% !important; border-radius: 12px; }
+    .player-overlay { position: absolute; inset: 0; z-index: 2; }
+
+    /* Now playing */
+    .now-playing { width: 100%; max-width: 800px; text-align: center; min-height: 36px; }
+    .now-playing .waiting-msg { color: var(--text-muted); font-size: 13px; font-style: italic; }
+    .now-playing .track-name { font-size: 15px; font-weight: 600; }
+    .now-playing .track-artist { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Controls */
+    .controls-bar {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+    }
+    .play-pause-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .seekbar-section { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .time-row { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.35); }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.15);
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--purple);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--purple);
+      border: none;
+    }
+
+    /* Volume */
+    .volume-row {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .volume-row .vol-icon { font-size: 18px; flex-shrink: 0; }
+    .volume-row input[type="range"] { flex: 1; max-width: 160px; }
+
+    /* Search */
+    .search-section { width: 100%; max-width: 800px; }
+    .search-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: rgba(255,255,255,0.75); }
+    .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-row input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      color: white;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .search-row input:focus { border-color: rgba(124,58,237,0.5); }
+    .search-row input::placeholder { color: rgba(255,255,255,0.28); }
+    .search-row button {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .search-results { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
+    .search-results::-webkit-scrollbar { width: 4px; }
+    .search-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    .video-card {
+      display: flex;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .video-card:active { background: rgba(124,58,237,0.1); border-color: rgba(124,58,237,0.2); }
+    .video-card img { width: 120px; height: 68px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .video-info { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+    .video-title {
+      font-size: 13px; font-weight: 500; line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .video-channel { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    /* Members */
+    .members-section { width: 100%; max-width: 800px; }
+    .members-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .members-header h4 { font-size: 14px; font-weight: 600; }
+    .member-count-badge {
+      padding: 2px 10px;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.35);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--purple);
+    }
+    .member-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    .member-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .member-name { font-size: 14px; }
+    .host-badge {
+      padding: 2px 10px;
+      background: rgba(236,72,153,0.12);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pink);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 11px 22px;
+      background: rgba(24,24,32,0.95);
+      border: 1px solid rgba(236,72,153,0.3);
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      transition: transform 0.3s ease;
+      z-index: 200;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Autoplay gate */
+    .autoplay-gate {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,9,15,0.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      z-index: 100;
+      text-align: center;
+      padding: 2rem;
+    }
+    .autoplay-gate.show { display: flex; }
+    .autoplay-gate h2 { font-size: 1.3rem; }
+    .autoplay-gate p { color: var(--text-muted); font-size: 14px; max-width: 300px; }
+    .autoplay-gate button {
+      padding: 14px 36px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Loading spinner */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+    }
+    .loading-overlay.hidden { display: none; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(124,58,237,0.2);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="screen-login" class="screen">
+  <div class="login-content">
+    <div class="app-logo">
+      <svg viewBox="0 0 200 195" fill="none">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7c3aed"/>
+            <stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+        </defs>
+        <path d="M100,0 C155,0 200,40 200,90 C200,140 155,180 100,180 C85,180 70,177 58,172 L20,195 L30,162 C12,147 0,125 0,90 C0,40 45,0 100,0 Z" fill="url(#logoGrad)" opacity="0.9"/>
+        <rect x="60" y="55" width="16" height="70" rx="8" fill="white"/>
+        <rect x="92" y="35" width="16" height="110" rx="8" fill="white"/>
+        <rect x="124" y="50" width="16" height="80" rx="8" fill="white"/>
+      </svg>
+    </div>
+
+    <h1 class="login-title grad-text">BlaBlaBla</h1>
+    <p class="login-subtitle" data-i18n="login_subtitle">Listen together, anywhere</p>
+
+    <div class="login-buttons">
+      <button class="login-btn" onclick="loginWith('google')">
+        <svg viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        <span data-i18n="login_google">Sign in with Google</span>
+      </button>
+
+      <button class="login-btn" onclick="loginWith('facebook')">
+        <svg viewBox="0 0 24 24">
+          <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        </svg>
+        <span data-i18n="login_facebook">Sign in with Facebook</span>
+      </button>
+
+      <button class="login-btn" onclick="loginWith('apple')">
+        <svg viewBox="0 0 24 24" fill="white">
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+        </svg>
+        <span data-i18n="login_apple">Sign in with Apple</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div id="screen-home" class="screen">
+  <div class="nav-bar">
+    <div class="nav-left"></div>
+    <div class="nav-center">
+      <div class="nav-logo">
+        <svg viewBox="0 0 200 195" fill="none">
+          <path d="M100,0 C155,0 200,40 200,90 C200,140 155,180 100,180 C85,180 70,177 58,172 L20,195 L30,162 C12,147 0,125 0,90 C0,40 45,0 100,0 Z" fill="url(#logoGrad)" opacity="0.9"/>
+          <rect x="60" y="55" width="16" height="70" rx="8" fill="white"/>
+          <rect x="92" y="35" width="16" height="110" rx="8" fill="white"/>
+          <rect x="124" y="50" width="16" height="80" rx="8" fill="white"/>
+        </svg>
+      </div>
+      <span class="nav-brand grad-text">BlaBlaBla</span>
+    </div>
+    <div class="nav-right">
+      <div class="avatar-wrap">
+        <button class="avatar-btn" id="avatar-btn" onclick="toggleDropdown()">A</button>
+        <div class="avatar-dropdown" id="avatar-dropdown">
+          <div class="dd-name" id="dd-user-name">User</div>
+          <div class="dd-logout" onclick="logout()" data-i18n="logout">Logout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-body">
+    <h2 class="home-title grad-text" data-i18n="welcome">Welcome!</h2>
+    <p class="home-subtitle" data-i18n="home_subtitle">Start listening together</p>
+
+    <div class="card">
+      <h3 data-i18n="create_room_title">🎵 Create Room</h3>
+      <p data-i18n="create_room_desc">Create a room and share the code with your friends to listen together.</p>
+      <button class="btn-primary" onclick="createRoom()" data-i18n="create_room_btn">Create New Room</button>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="join_room_title">🎧 Join Room</h3>
+      <p data-i18n="join_room_desc">Enter the 6-character code shared by a friend to join their room.</p>
+      <div class="input-row">
+        <input type="text" id="input-room-code" data-i18n-placeholder="room_code_placeholder" placeholder="Ex: AB12CD" maxlength="6"
+               onkeypress="if(event.key==='Enter') joinRoom()">
+        <button onclick="joinRoom()" data-i18n="join_btn">Join</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ROOM ═══════════════ -->
+<div id="screen-room" class="screen">
+  <div class="nav-bar">
+    <div class="nav-left">
+      <button class="btn-back" onclick="leaveRoom()">←</button>
+    </div>
+    <div class="nav-center">
+      <div class="nav-logo">
+        <svg viewBox="0 0 200 195" fill="none">
+          <path d="M100,0 C155,0 200,40 200,90 C200,140 155,180 100,180 C85,180 70,177 58,172 L20,195 L30,162 C12,147 0,125 0,90 C0,40 45,0 100,0 Z" fill="url(#logoGrad)" opacity="0.9"/>
+          <rect x="60" y="55" width="16" height="70" rx="8" fill="white"/>
+          <rect x="92" y="35" width="16" height="110" rx="8" fill="white"/>
+          <rect x="124" y="50" width="16" height="80" rx="8" fill="white"/>
+        </svg>
+      </div>
+      <span class="nav-brand grad-text">BlaBlaBla</span>
+    </div>
+    <div class="nav-right">
+      <button class="room-code-btn" id="room-code-btn" onclick="copyRoomCode()">
+        <span id="room-code">------</span>
+        <span class="copy-icon">📋</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="room-body">
+    <!-- Player -->
+    <div class="player-wrapper">
+      <div id="youtube-player"></div>
+      <div class="player-overlay" id="player-overlay"></div>
+    </div>
+
+    <!-- Now playing -->
+    <div class="now-playing" id="now-playing">
+      <p class="waiting-msg" id="waiting-msg" data-i18n="waiting_host">Waiting for the host to pick a song...</p>
+      <p class="track-name" id="track-name" style="display:none"></p>
+      <p class="track-artist" id="track-artist" style="display:none"></p>
+    </div>
+
+    <!-- Controls (host only) -->
+    <div class="controls-bar" id="host-controls" style="display:none">
+      <button class="play-pause-btn" id="play-pause-btn" onclick="togglePlayPause()">▶</button>
+      <div class="seekbar-section">
+        <input type="range" id="seekbar" value="0" min="0" max="100" step="0.1">
+        <div class="time-row">
+          <span id="time-current">0:00</span>
+          <span id="time-duration">0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Volume -->
+    <div class="volume-row">
+      <span class="vol-icon">🔊</span>
+      <input type="range" id="volume-slider" value="100" min="0" max="100">
+    </div>
+
+    <!-- Search -->
+    <div class="search-section" id="search-section">
+      <h4 data-i18n="search_title">🔍 Search Music</h4>
+      <div class="search-row">
+        <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Song name or YouTube link..."
+               onkeypress="if(event.key==='Enter') searchYouTube()">
+        <button onclick="searchYouTube()" data-i18n="search_btn">Search</button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <!-- Members -->
+    <div class="members-section">
+      <div class="members-header">
+        <h4 data-i18n="members_title">Members</h4>
+        <span class="member-count-badge" id="member-count-badge">0</span>
+      </div>
+      <div id="members-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Autoplay gate -->
+<div class="autoplay-gate" id="autoplay-gate">
+  <h2 data-i18n="autoplay_title">🎵 Ready to listen?</h2>
+  <p data-i18n="autoplay_desc">Tap the button to enable audio playback on your device.</p>
+  <button onclick="dismissAutoplayGate()" data-i18n="autoplay_btn">Start</button>
+</div>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script>
+// ═══════════════════════════════════════════
+// i18n — Auto-detect language
+// ═══════════════════════════════════════════
+const TRANSLATIONS = {
+  en: {
+    login_subtitle: 'Listen together, anywhere',
+    login_google: 'Sign in with Google',
+    login_facebook: 'Sign in with Facebook',
+    login_apple: 'Sign in with Apple',
+    welcome: 'Welcome!',
+    home_subtitle: 'Start listening together',
+    create_room_title: '🎵 Create Room',
+    create_room_desc: 'Create a room and share the code with your friends to listen together.',
+    create_room_btn: 'Create New Room',
+    join_room_title: '🎧 Join Room',
+    join_room_desc: 'Enter the 6-character code shared by a friend to join their room.',
+    room_code_placeholder: 'Ex: AB12CD',
+    join_btn: 'Join',
+    logout: 'Logout',
+    search_title: '🔍 Search Music',
+    search_placeholder: 'Song name or YouTube link...',
+    search_btn: 'Search',
+    members_title: 'Members',
+    waiting_host: 'Waiting for the host to pick a song...',
+    autoplay_title: '🎵 Ready to listen?',
+    autoplay_desc: 'Tap the button to enable audio playback on your device.',
+    autoplay_btn: 'Start',
+    toast_code_6: 'Code must be 6 characters',
+    toast_host_only: 'Only the host can choose the song',
+    toast_disconnected: 'Disconnected from server',
+    toast_copied: 'Code copied!',
+    toast_error_room: 'Error creating room',
+    toast_error_search: 'Search error',
+    searching: 'Searching...',
+    no_results: 'No results found.',
+    you: 'You',
+    n_members: (n) => `${n} member${n !== 1 ? 's' : ''}`,
+  },
+  pt: {
+    login_subtitle: 'Escuta juntos, em qualquer lugar',
+    login_google: 'Entrar com Google',
+    login_facebook: 'Entrar com Facebook',
+    login_apple: 'Entrar com Apple',
+    welcome: 'Bem-vindo!',
+    home_subtitle: 'Comece a ouvir juntos',
+    create_room_title: '🎵 Criar Sala',
+    create_room_desc: 'Crie uma sala e compartilhe o código com seus amigos para ouvir juntos.',
+    create_room_btn: 'Criar Nova Sala',
+    join_room_title: '🎧 Entrar numa Sala',
+    join_room_desc: 'Digite o código de 6 caracteres compartilhado por um amigo.',
+    room_code_placeholder: 'Ex: AB12CD',
+    join_btn: 'Entrar',
+    logout: 'Sair',
+    search_title: '🔍 Buscar Músicas',
+    search_placeholder: 'Nome da música ou link do YouTube...',
+    search_btn: 'Buscar',
+    members_title: 'Membros',
+    waiting_host: 'Aguardando o host escolher uma música...',
+    autoplay_title: '🎵 Pronto para ouvir?',
+    autoplay_desc: 'Toque no botão para permitir a reprodução de áudio.',
+    autoplay_btn: 'Iniciar',
+    toast_code_6: 'Código deve ter 6 caracteres',
+    toast_host_only: 'Apenas o host pode escolher a música',
+    toast_disconnected: 'Desconectado do servidor',
+    toast_copied: 'Código copiado!',
+    toast_error_room: 'Erro ao criar sala',
+    toast_error_search: 'Erro na busca',
+    searching: 'Buscando...',
+    no_results: 'Nenhum resultado encontrado.',
+    you: 'Você',
+    n_members: (n) => `${n} membro${n !== 1 ? 's' : ''}`,
+  },
+  es: {
+    login_subtitle: 'Escucha juntos, en cualquier lugar',
+    login_google: 'Iniciar con Google',
+    login_facebook: 'Iniciar con Facebook',
+    login_apple: 'Iniciar con Apple',
+    welcome: '¡Bienvenido!',
+    home_subtitle: 'Empieza a escuchar juntos',
+    create_room_title: '🎵 Crear Sala',
+    create_room_desc: 'Crea una sala y comparte el código con tus amigos para escuchar juntos.',
+    create_room_btn: 'Crear Nueva Sala',
+    join_room_title: '🎧 Unirse a una Sala',
+    join_room_desc: 'Ingresa el código de 6 caracteres compartido por un amigo.',
+    room_code_placeholder: 'Ej: AB12CD',
+    join_btn: 'Unirse',
+    logout: 'Salir',
+    search_title: '🔍 Buscar Música',
+    search_placeholder: 'Nombre de canción o enlace de YouTube...',
+    search_btn: 'Buscar',
+    members_title: 'Miembros',
+    waiting_host: 'Esperando que el host elija una canción...',
+    autoplay_title: '🎵 ¿Listo para escuchar?',
+    autoplay_desc: 'Toca el botón para habilitar la reproducción de audio.',
+    autoplay_btn: 'Iniciar',
+    toast_code_6: 'El código debe tener 6 caracteres',
+    toast_host_only: 'Solo el host puede elegir la canción',
+    toast_disconnected: 'Desconectado del servidor',
+    toast_copied: '¡Código copiado!',
+    toast_error_room: 'Error al crear sala',
+    toast_error_search: 'Error en la búsqueda',
+    searching: 'Buscando...',
+    no_results: 'No se encontraron resultados.',
+    you: 'Tú',
+    n_members: (n) => `${n} miembro${n !== 1 ? 's' : ''}`,
+  }
+};
+
+function detectLang() {
+  const nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+  if (nav.startsWith('pt')) return 'pt';
+  if (nav.startsWith('es')) return 'es';
+  return 'en';
+}
+
+const LANG = detectLang();
+const t = (key, ...args) => {
+  const val = TRANSLATIONS[LANG]?.[key] || TRANSLATIONS.en[key] || key;
+  return typeof val === 'function' ? val(...args) : val;
+};
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+}
+
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAfzNGGdcJ-7AkMMwKaIXqK_w6xOxxbkpw",
+  authDomain:        "blablabla-79cd2.firebaseapp.com",
+  projectId:         "blablabla-79cd2",
+  storageBucket:     "blablabla-79cd2.firebasestorage.app",
+  messagingSenderId: "914731052244",
+  appId:             "1:914731052244:web:763f0f2f456ca8bcfe5f41",
+  measurementId:     "G-JX6KQB172L",
+};
+
+const BACKEND_URL = 'https://blablabla.live';
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentUser  = null;
+let socket       = null;
+let ytPlayer     = null;
+let ytReady      = false;
+let currentRoom  = null;
+let isHost       = false;
+let ntpOffset    = 0;
+let curVideoId   = null;
+let duration     = 0;
+let seekTimer    = null;
+let pendingSync  = null;
+
+// ═══════════════════════════════════════════
+// FIREBASE AUTH
+// ═══════════════════════════════════════════
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+
+// Detect if running inside Capacitor native app
+const isCapacitor = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform();
+
+// Initialize native Google Sign-In plugin (Capacitor only)
+let GoogleAuthPlugin = null;
+if (isCapacitor) {
+  // DEBUG — check what Capacitor sees
+  const regType = typeof Capacitor.registerPlugin;
+  const pluginKeys = Object.keys(Capacitor.Plugins || {}).join(', ');
+  alert('[INIT] registerPlugin=' + regType + '\nPlugins: [' + pluginKeys + ']');
+
+  // Method 1: registerPlugin (Capacitor 6)
+  if (typeof Capacitor.registerPlugin === 'function') {
+    try {
+      GoogleAuthPlugin = Capacitor.registerPlugin('GoogleAuth');
+      alert('[INIT] registerPlugin returned: ' + typeof GoogleAuthPlugin);
+    } catch (e1) {
+      alert('[INIT] registerPlugin error: ' + e1.message);
+    }
+  }
+
+  // Method 2: legacy Plugins object
+  if (!GoogleAuthPlugin) {
+    try {
+      GoogleAuthPlugin = Capacitor.Plugins.GoogleAuth || null;
+      alert('[INIT] legacy Plugins.GoogleAuth: ' + typeof GoogleAuthPlugin);
+    } catch (e2) {
+      alert('[INIT] legacy error: ' + e2.message);
+    }
+  }
+
+  // Initialize if we got the plugin
+  if (GoogleAuthPlugin) {
+    try {
+      GoogleAuthPlugin.initialize({
+        clientId: '914731052244-j3e5mas6rmju4vertras3ff1p11lck8c.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true
+      });
+      alert('[INIT] initialize() called OK');
+    } catch (e3) {
+      alert('[INIT] initialize error: ' + e3.message);
+    }
+  } else {
+    alert('[INIT] NO PLUGIN FOUND');
+  }
+}
+
+// Persistent login
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+auth.onAuthStateChanged((user) => {
+  currentUser = user;
+  document.getElementById('loading-overlay').classList.add('hidden');
+
+  if (user) {
+    const initial = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+    document.getElementById('avatar-btn').textContent = initial;
+    document.getElementById('dd-user-name').textContent = user.displayName || user.email || 'User';
+    showScreen('home');
+    connectSocket();
+  } else {
+    showScreen('login');
+    disconnectSocket();
+  }
+});
+
+async function loginWith(provider) {
+  try {
+    // DEBUG — remove after testing
+    alert('[DEBUG 1] isCapacitor=' + isCapacitor + ' | plugin=' + !!GoogleAuthPlugin + ' | provider=' + provider);
+
+    if (provider === 'google' && isCapacitor && GoogleAuthPlugin) {
+      alert('[DEBUG 2] Calling native GoogleAuth.signIn()...');
+      const googleUser = await GoogleAuthPlugin.signIn();
+      alert('[DEBUG 3] Got googleUser: ' + JSON.stringify(Object.keys(googleUser || {})));
+      const idToken = googleUser.authentication.idToken;
+      alert('[DEBUG 4] idToken length: ' + (idToken ? idToken.length : 'NULL'));
+      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+      await auth.signInWithCredential(credential);
+      alert('[DEBUG 5] signInWithCredential SUCCESS!');
+    } else {
+      alert('[DEBUG FALLBACK] Using signInWithPopup — THIS IS THE PROBLEM');
+      let p;
+      switch (provider) {
+        case 'google':   p = new firebase.auth.GoogleAuthProvider();        break;
+        case 'facebook': p = new firebase.auth.FacebookAuthProvider();     break;
+        case 'apple':    p = new firebase.auth.OAuthProvider('apple.com'); break;
+        default: return;
+      }
+      await auth.signInWithPopup(p);
+    }
+  } catch (err) {
+    alert('[DEBUG ERROR] ' + (err.code || '') + ': ' + (err.message || err));
+    console.error('Login error:', err);
+    showToast(err.message || 'Login failed');
+  }
+}
+
+async function logout() {
+  closeDropdown();
+  leaveRoom();
+  await auth.signOut();
+}
+
+// ═══════════════════════════════════════════
+// DROPDOWN
+// ═══════════════════════════════════════════
+function toggleDropdown() {
+  document.getElementById('avatar-dropdown').classList.toggle('open');
+}
+function closeDropdown() {
+  document.getElementById('avatar-dropdown').classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.avatar-wrap')) closeDropdown();
+});
+
+// ═══════════════════════════════════════════
+// SOCKET.IO
+// ═══════════════════════════════════════════
+function connectSocket() {
+  if (socket?.connected) return;
+  socket = io(BACKEND_URL);
+
+  socket.on('connect', () => {
+    if (currentUser) {
+      currentUser.getIdToken().then(token => socket.emit('authenticate', { token }));
+    }
+  });
+
+  socket.on('authenticated', ({ ntpOffset: off }) => { ntpOffset = off || 0; });
+
+  socket.on('room_state', ({ room }) => {
+    currentRoom = room;
+    isHost      = room.hostId === currentUser.uid;
+    curVideoId  = room.playbackState?.trackUri || null;
+    showScreen('room');
+    updateRoomUI();
+    if (room.playbackState?.trackUri) syncPlayer(room.playbackState);
+  });
+
+  socket.on('playback_update', ({ playbackState }) => {
+    if (currentRoom) currentRoom.playbackState = playbackState;
+    curVideoId = playbackState.trackUri;
+    syncPlayer(playbackState);
+    updateNowPlaying(playbackState);
+  });
+
+  socket.on('member_joined', ({ uid }) => {
+    if (currentRoom && !currentRoom.members.includes(uid)) {
+      currentRoom.members.push(uid);
+      updateMembersUI();
+    }
+  });
+
+  socket.on('member_left', ({ uid }) => {
+    if (!currentRoom) return;
+    if (uid === currentUser.uid) {
+      resetRoom();
+      showScreen('home');
+    } else {
+      currentRoom.members = currentRoom.members.filter(id => id !== uid);
+      updateMembersUI();
+    }
+  });
+
+  socket.on('host_changed', ({ newHost }) => {
+    if (!currentRoom) return;
+    currentRoom.hostId = newHost;
+    isHost = newHost === currentUser.uid;
+    updateRoomUI();
+  });
+
+  socket.on('error', ({ message }) => showToast(message));
+  socket.on('disconnect', () => showToast(t('toast_disconnected')));
+}
+
+function disconnectSocket() {
+  if (socket) { socket.disconnect(); socket = null; }
+}
+
+// ═══════════════════════════════════════════
+// ROOM
+// ═══════════════════════════════════════════
+async function createRoom() {
+  try {
+    const token = await currentUser.getIdToken();
+    const res = await fetch(BACKEND_URL + '/api/rooms', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error(t('toast_error_room'));
+    const room = await res.json();
+    socket.emit('join_room', { code: room.code });
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+function joinRoom() {
+  const code = document.getElementById('input-room-code').value.trim().toUpperCase();
+  if (!code || code.length !== 6) return showToast(t('toast_code_6'));
+  socket.emit('join_room', { code });
+}
+
+function leaveRoom() {
+  if (!socket || !currentRoom) return;
+  socket.emit('leave_room');
+  resetRoom();
+  showScreen('home');
+}
+
+function resetRoom() {
+  currentRoom = null;
+  isHost      = false;
+  curVideoId  = null;
+  pendingSync = null;
+  if (seekTimer) { clearInterval(seekTimer); seekTimer = null; }
+  if (ytPlayer && ytReady) ytPlayer.stopVideo();
+}
+
+function copyRoomCode() {
+  const code = currentRoom?.code;
+  if (!code) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => showToast(t('toast_copied')));
+  } else {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(t('toast_copied'));
+  }
+}
+
+// ═══════════════════════════════════════════
+// YOUTUBE PLAYER
+// ═══════════════════════════════════════════
+(function() {
+  const s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+})();
+
+window.onYouTubeIframeAPIReady = function () {
+  ytPlayer = new YT.Player('youtube-player', {
+    playerVars: { controls: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+    events: {
+      onReady: () => {
+        ytReady = true;
+        startSeekTimer();
+        if (pendingSync) { syncPlayer(pendingSync); pendingSync = null; }
+      },
+      onStateChange: () => { duration = ytPlayer.getDuration() || 0; },
+      onError: () => showToast('YouTube error'),
+    },
+  });
+};
+
+function syncPlayer(state) {
+  if (!ytPlayer || !ytReady) { pendingSync = state; return; }
+
+  const videoId = state.trackUri;
+  if (!videoId) return;
+
+  let targetSec;
+  if (state.isPlaying) {
+    const now     = Date.now() + ntpOffset;
+    const elapsed = now - new Date(state.startedAt).getTime();
+    targetSec     = (state.position + elapsed) / 1000;
+  } else {
+    targetSec = state.position / 1000;
+  }
+  targetSec = Math.max(0, targetSec);
+
+  const curVid = ytPlayer.getVideoData?.()?.videoId;
+  if (curVid !== videoId) {
+    ytPlayer.loadVideoById({ videoId, startSeconds: targetSec });
+    curVideoId = videoId;
+  } else {
+    ytPlayer.seekTo(targetSec, true);
+  }
+
+  if (state.isPlaying) ytPlayer.playVideo();
+  else                  ytPlayer.pauseVideo();
+
+  updatePlayPauseBtn(state.isPlaying);
+}
+
+// ═══════════════════════════════════════════
+// PLAYBACK CONTROLS
+// ═══════════════════════════════════════════
+function togglePlayPause() {
+  if (!isHost || !currentRoom?.playbackState) return;
+  socket.emit(currentRoom.playbackState.isPlaying ? 'pause' : 'resume');
+}
+
+function playTrack(videoId, title, channelTitle) {
+  if (!isHost) return showToast(t('toast_host_only'));
+  socket.emit('play', { trackUri: videoId, trackName: title, trackArtist: channelTitle });
+}
+
+// ═══════════════════════════════════════════
+// YOUTUBE SEARCH
+// ═══════════════════════════════════════════
+async function searchYouTube() {
+  const input = document.getElementById('search-input').value.trim();
+  if (!input) return;
+
+  const vid = extractVideoId(input);
+  if (vid) { playTrack(vid, 'YouTube Video', 'YouTube'); return; }
+
+  const el = document.getElementById('search-results');
+  el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:13px">${t('searching')}</p>`;
+
+  try {
+    const token = await currentUser.getIdToken();
+    const res = await fetch(BACKEND_URL + `/api/youtube/search?q=${encodeURIComponent(input)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(t('toast_error_search'));
+    renderResults(await res.json());
+  } catch (err) {
+    el.innerHTML = `<p style="color:#ec4899;font-size:13px">${err.message}</p>`;
+  }
+}
+
+function extractVideoId(input) {
+  try {
+    const url = new URL(input);
+    if (url.hostname.includes('youtube.com')) return url.searchParams.get('v');
+    if (url.hostname === 'youtu.be') return url.pathname.slice(1).split('?')[0];
+  } catch (e) {}
+  return null;
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderResults(results) {
+  const el = document.getElementById('search-results');
+  if (!results.length) {
+    el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:13px">${t('no_results')}</p>`;
+    return;
+  }
+  el.innerHTML = results.map(r => `
+    <div class="video-card" data-id="${escapeHtml(r.videoId)}" data-title="${escapeHtml(r.title)}" data-channel="${escapeHtml(r.channelTitle)}">
+      <img src="${escapeHtml(r.thumbnail)}" alt="" loading="lazy">
+      <div class="video-info">
+        <p class="video-title">${escapeHtml(r.title)}</p>
+        <p class="video-channel">${escapeHtml(r.channelTitle)}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('search-results').addEventListener('click', (e) => {
+  const card = e.target.closest('.video-card');
+  if (card) playTrack(card.dataset.id, card.dataset.title, card.dataset.channel);
+});
+
+// ═══════════════════════════════════════════
+// SEEKBAR & VOLUME
+// ═══════════════════════════════════════════
+document.getElementById('seekbar').addEventListener('input', function () {
+  if (!isHost || !duration) return;
+  socket.emit('seek', { position: (this.value / 100) * duration * 1000 });
+});
+
+document.getElementById('volume-slider').addEventListener('input', function () {
+  if (ytPlayer && ytReady) ytPlayer.setVolume(Number(this.value));
+});
+
+function startSeekTimer() {
+  if (seekTimer) clearInterval(seekTimer);
+  seekTimer = setInterval(() => {
+    if (!ytPlayer || !ytReady) return;
+    const cur = ytPlayer.getCurrentTime() || 0;
+    duration  = ytPlayer.getDuration()    || 0;
+    if (duration > 0) document.getElementById('seekbar').value = (cur / duration) * 100;
+    document.getElementById('time-current').textContent  = fmtTime(cur);
+    document.getElementById('time-duration').textContent = fmtTime(duration);
+  }, 800);
+}
+
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// ═══════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function updateRoomUI() {
+  document.getElementById('room-code').textContent = currentRoom?.code || '------';
+  document.getElementById('host-controls').style.display = isHost ? 'flex' : 'none';
+  document.getElementById('player-overlay').style.display = isHost ? 'none' : 'block';
+
+  if (currentRoom?.playbackState?.trackUri) updateNowPlaying(currentRoom.playbackState);
+  updateMembersUI();
+}
+
+function updateNowPlaying(state) {
+  const hasTrack = !!state?.trackUri;
+  document.getElementById('waiting-msg').style.display  = hasTrack ? 'none'  : 'block';
+  document.getElementById('track-name').style.display   = hasTrack ? 'block' : 'none';
+  document.getElementById('track-artist').style.display = hasTrack ? 'block' : 'none';
+  if (state?.trackName)   document.getElementById('track-name').textContent   = state.trackName;
+  if (state?.trackArtist) document.getElementById('track-artist').textContent = state.trackArtist;
+  updatePlayPauseBtn(state?.isPlaying);
+}
+
+function updatePlayPauseBtn(playing) {
+  document.getElementById('play-pause-btn').textContent = playing ? '⏸' : '▶';
+}
+
+function updateMembersUI() {
+  const members = currentRoom?.members || [];
+  document.getElementById('member-count-badge').textContent = members.length;
+
+  const colors = [
+    'linear-gradient(135deg, #7c3aed, #a855f7)',
+    'linear-gradient(135deg, #ec4899, #f472b6)',
+    'linear-gradient(135deg, #3b82f6, #60a5fa)',
+    'linear-gradient(135deg, #10b981, #34d399)',
+    'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  ];
+
+  document.getElementById('members-list').innerHTML = members.map((uid, i) => {
+    const isMe = uid === currentUser.uid;
+    const isHostMember = uid === currentRoom.hostId;
+    const label = isMe ? t('you') : uid.slice(0, 8) + '…';
+    const initial = isMe ? (currentUser.displayName || 'U').charAt(0).toUpperCase() : uid.charAt(0).toUpperCase();
+    const color = colors[i % colors.length];
+
+    return `
+      <div class="member-item">
+        <div class="member-avatar" style="background:${color}">${initial}</div>
+        <span class="member-name">${escapeHtml(label)}</span>
+        ${isHostMember ? `<span class="host-badge">Host</span>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// AUTOPLAY GATE
+// ═══════════════════════════════════════════
+function dismissAutoplayGate() {
+  document.getElementById('autoplay-gate').classList.remove('show');
+  if (ytPlayer && ytReady && currentRoom?.playbackState?.isPlaying) {
+    ytPlayer.playVideo();
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+applyI18n();
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@
   "scripts": {
     "prepare-web": "node prepare.js",
     "android": "node prepare.js && npx cap sync android && npx cap open android",
+    "generate-icons": "node tools/generate-icons.js",
     "ios": "node prepare.js && npx cap sync ios"
   },
   "dependencies": {
@@ -12,6 +13,11 @@
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.0.0",
     "@capacitor/splash-screen": "^6.0.0",
-    "@capacitor/status-bar": "^6.0.0"
+    "@capacitor/status-bar": "^6.0.0",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
+    "googleapis": "^171.4.0"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

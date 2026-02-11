@@ -2,6 +2,9 @@
   "appId": "com.blablabla.app",
   "appName": "BlaBlaBla",
   "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
@@ -10,6 +13,11 @@
     "StatusBar": {
       "style": "DARK",
       "backgroundColor": "#08090f"
+    },
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "914731052244-j3e5mas6rmju4vertras3ff1p11lck8c.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
     }
   }
 }

@@ -679,13 +679,6 @@ let pendingSync  = null;   // guardado até o player estar pronto
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 
-// Apanha resultado de autenticação por redirect (necessário para apps móveis)
-auth.getRedirectResult().then(result => {
-  if (result?.user) console.log('[Auth] Login via redirect:', result.user.displayName);
-}).catch(err => {
-  if (err.code !== 'auth/no-pending-redirect') console.error('[Auth] Redirect error:', err);
-});
-
 auth.onAuthStateChanged((user) => {
   currentUser = user;
   if (user) {
@@ -708,7 +701,7 @@ async function loginWith(provider) {
       case 'apple':    p = new firebase.auth.OAuthProvider('apple.com');   break;
       default: return;
     }
-    await auth.signInWithRedirect(p);
+    await auth.signInWithPopup(p);
   } catch (err) {
     showToast(err.message);
   }
