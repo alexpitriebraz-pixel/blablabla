@@ -692,18 +692,25 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
+let _loginBusy = false;
 async function loginWith(provider) {
+  if (_loginBusy) return;
+  _loginBusy = true;
   let p;
   try {
     switch (provider) {
       case 'google':   p = new firebase.auth.GoogleAuthProvider();          break;
       case 'facebook': p = new firebase.auth.FacebookAuthProvider();       break;
       case 'apple':    p = new firebase.auth.OAuthProvider('apple.com');   break;
-      default: return;
+      default: _loginBusy = false; return;
     }
     await auth.signInWithPopup(p);
   } catch (err) {
-    showToast(err.message);
+    if (err.code !== 'auth/cancelled-popup-request' && err.code !== 'auth/popup-closed-by-user') {
+      showToast(err.message);
+    }
+  } finally {
+    _loginBusy = false;
   }
 }
 
