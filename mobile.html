@@ -924,35 +924,43 @@ const auth = firebase.auth();
 // Detect if running inside Capacitor native app
 const isCapacitor = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform();
 
+// Initialize background mode (keeps audio playing when app is minimized)
+let BackgroundMode = null;
+let MediaSession = null;
+if (isCapacitor) {
+  try {
+    BackgroundMode = Capacitor.registerPlugin('BackgroundMode');
+    BackgroundMode.enable();
+    BackgroundMode.disableWebViewOptimizations();
+    BackgroundMode.setSettings({
+      title: 'BlaBlaBla',
+      text: 'Playing music',
+      icon: 'ic_launcher',
+      silent: false
+    });
+  } catch (e) { console.warn('BackgroundMode init:', e); }
+
+  try {
+    MediaSession = Capacitor.registerPlugin('MediaSession');
+    // Handle notification control buttons
+    MediaSession.setActionHandler({ action: 'play' }, () => {
+      if (isHost && socket) socket.emit('resume');
+    });
+    MediaSession.setActionHandler({ action: 'pause' }, () => {
+      if (isHost && socket) socket.emit('pause');
+    });
+  } catch (e) { console.warn('MediaSession init:', e); }
+}
+
 // Initialize native Google Sign-In plugin (Capacitor only)
 let GoogleAuthPlugin = null;
 if (isCapacitor) {
-  // DEBUG — check what Capacitor sees
-  const regType = typeof Capacitor.registerPlugin;
-  const pluginKeys = Object.keys(Capacitor.Plugins || {}).join(', ');
-  alert('[INIT] registerPlugin=' + regType + '\nPlugins: [' + pluginKeys + ']');
-
-  // Method 1: registerPlugin (Capacitor 6)
   if (typeof Capacitor.registerPlugin === 'function') {
-    try {
-      GoogleAuthPlugin = Capacitor.registerPlugin('GoogleAuth');
-      alert('[INIT] registerPlugin returned: ' + typeof GoogleAuthPlugin);
-    } catch (e1) {
-      alert('[INIT] registerPlugin error: ' + e1.message);
-    }
+    try { GoogleAuthPlugin = Capacitor.registerPlugin('GoogleAuth'); } catch (e) {}
   }
-
-  // Method 2: legacy Plugins object
   if (!GoogleAuthPlugin) {
-    try {
-      GoogleAuthPlugin = Capacitor.Plugins.GoogleAuth || null;
-      alert('[INIT] legacy Plugins.GoogleAuth: ' + typeof GoogleAuthPlugin);
-    } catch (e2) {
-      alert('[INIT] legacy error: ' + e2.message);
-    }
+    try { GoogleAuthPlugin = Capacitor.Plugins.GoogleAuth || null; } catch (e) {}
   }
-
-  // Initialize if we got the plugin
   if (GoogleAuthPlugin) {
     try {
       GoogleAuthPlugin.initialize({
@@ -960,12 +968,7 @@ if (isCapacitor) {
         scopes: ['profile', 'email'],
         grantOfflineAccess: true
       });
-      alert('[INIT] initialize() called OK');
-    } catch (e3) {
-      alert('[INIT] initialize error: ' + e3.message);
-    }
-  } else {
-    alert('[INIT] NO PLUGIN FOUND');
+    } catch (e) { console.warn('GoogleAuth init error:', e); }
   }
 }
 
@@ -988,35 +991,33 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
+let _loginBusy = false;
 async function loginWith(provider) {
+  if (_loginBusy) return;
+  _loginBusy = true;
   try {
-    // DEBUG — remove after testing
-    alert('[DEBUG 1] isCapacitor=' + isCapacitor + ' | plugin=' + !!GoogleAuthPlugin + ' | provider=' + provider);
-
     if (provider === 'google' && isCapacitor && GoogleAuthPlugin) {
-      alert('[DEBUG 2] Calling native GoogleAuth.signIn()...');
       const googleUser = await GoogleAuthPlugin.signIn();
-      alert('[DEBUG 3] Got googleUser: ' + JSON.stringify(Object.keys(googleUser || {})));
       const idToken = googleUser.authentication.idToken;
-      alert('[DEBUG 4] idToken length: ' + (idToken ? idToken.length : 'NULL'));
       const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
       await auth.signInWithCredential(credential);
-      alert('[DEBUG 5] signInWithCredential SUCCESS!');
     } else {
-      alert('[DEBUG FALLBACK] Using signInWithPopup — THIS IS THE PROBLEM');
       let p;
       switch (provider) {
         case 'google':   p = new firebase.auth.GoogleAuthProvider();        break;
         case 'facebook': p = new firebase.auth.FacebookAuthProvider();     break;
         case 'apple':    p = new firebase.auth.OAuthProvider('apple.com'); break;
-        default: return;
+        default: _loginBusy = false; return;
       }
       await auth.signInWithPopup(p);
     }
   } catch (err) {
-    alert('[DEBUG ERROR] ' + (err.code || '') + ': ' + (err.message || err));
-    console.error('Login error:', err);
-    showToast(err.message || 'Login failed');
+    if (err.code !== 'auth/cancelled-popup-request' && err.code !== 'auth/popup-closed-by-user') {
+      console.error('Login error:', err);
+      showToast(err.message || 'Login failed');
+    }
+  } finally {
+    _loginBusy = false;
   }
 }
 
@@ -1178,7 +1179,20 @@ window.onYouTubeIframeAPIReady = function () {
         startSeekTimer();
         if (pendingSync) { syncPlayer(pendingSync); pendingSync = null; }
       },
-      onStateChange: () => { duration = ytPlayer.getDuration() || 0; },
+      onStateChange: (e) => {
+        duration = ytPlayer.getDuration() || 0;
+        // Re-sync when player starts playing (compensates for buffering delay)
+        if (e.data === YT.PlayerState.PLAYING && currentRoom?.playbackState?.isPlaying) {
+          const state = currentRoom.playbackState;
+          const now = Date.now() + ntpOffset;
+          const elapsed = now - new Date(state.startedAt).getTime();
+          const targetSec = Math.max(0, (state.position + elapsed) / 1000);
+          const curSec = ytPlayer.getCurrentTime() || 0;
+          if (Math.abs(curSec - targetSec) > 0.8) {
+            ytPlayer.seekTo(targetSec, true);
+          }
+        }
+      },
       onError: () => showToast('YouTube error'),
     },
   });
@@ -1301,6 +1315,7 @@ document.getElementById('volume-slider').addEventListener('input', function () {
   if (ytPlayer && ytReady) ytPlayer.setVolume(Number(this.value));
 });
 
+let _syncCheckCount = 0;
 function startSeekTimer() {
   if (seekTimer) clearInterval(seekTimer);
   seekTimer = setInterval(() => {
@@ -1310,6 +1325,19 @@ function startSeekTimer() {
     if (duration > 0) document.getElementById('seekbar').value = (cur / duration) * 100;
     document.getElementById('time-current').textContent  = fmtTime(cur);
     document.getElementById('time-duration').textContent = fmtTime(duration);
+
+    // Periodic re-sync every ~4 seconds (every 5th tick at 800ms)
+    _syncCheckCount++;
+    if (_syncCheckCount >= 5 && currentRoom?.playbackState?.isPlaying) {
+      _syncCheckCount = 0;
+      const state = currentRoom.playbackState;
+      const now = Date.now() + ntpOffset;
+      const elapsed = now - new Date(state.startedAt).getTime();
+      const targetSec = Math.max(0, (state.position + elapsed) / 1000);
+      if (Math.abs(cur - targetSec) > 1.0) {
+        ytPlayer.seekTo(targetSec, true);
+      }
+    }
   }, 800);
 }
 
@@ -1351,6 +1379,20 @@ function updateNowPlaying(state) {
   if (state?.trackName)   document.getElementById('track-name').textContent   = state.trackName;
   if (state?.trackArtist) document.getElementById('track-artist').textContent = state.trackArtist;
   updatePlayPauseBtn(state?.isPlaying);
+
+  // Update media session notification (lock screen / notification controls)
+  if (MediaSession && hasTrack) {
+    try {
+      MediaSession.setMetadata({
+        title: state.trackName || 'BlaBlaBla',
+        artist: state.trackArtist || '',
+        album: 'BlaBlaBla'
+      });
+      MediaSession.setPlaybackState({
+        playbackState: state.isPlaying ? 'playing' : 'paused'
+      });
+    } catch (e) {}
+  }
 }
 
 function updatePlayPauseBtn(playing) {

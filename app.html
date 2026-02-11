@@ -844,7 +844,19 @@ window.onYouTubeIframeAPIReady = function () {
         startSeekTimer();
         if (pendingSync) { syncPlayer(pendingSync); pendingSync = null; }
       },
-      onStateChange: (e) => { duration = ytPlayer.getDuration() || 0; },
+      onStateChange: (e) => {
+        duration = ytPlayer.getDuration() || 0;
+        if (e.data === YT.PlayerState.PLAYING && currentRoom?.playbackState?.isPlaying) {
+          const state = currentRoom.playbackState;
+          const now = Date.now() + ntpOffset;
+          const elapsed = now - new Date(state.startedAt).getTime();
+          const targetSec = Math.max(0, (state.position + elapsed) / 1000);
+          const curSec = ytPlayer.getCurrentTime() || 0;
+          if (Math.abs(curSec - targetSec) > 0.8) {
+            ytPlayer.seekTo(targetSec, true);
+          }
+        }
+      },
       onError: () => showToast('Erro ao carregar vídeo'),
     },
   });
@@ -977,6 +989,7 @@ document.getElementById('volume-slider').addEventListener('input', function () {
   if (ytPlayer && ytReady) ytPlayer.setVolume(Number(this.value));
 });
 
+let _syncCheckCount = 0;
 function startSeekTimer() {
   if (seekTimer) clearInterval(seekTimer);
   seekTimer = setInterval(() => {
@@ -986,6 +999,19 @@ function startSeekTimer() {
     if (duration > 0) document.getElementById('seekbar').value = (cur / duration) * 100;
     document.getElementById('time-current').textContent  = fmtTime(cur);
     document.getElementById('time-duration').textContent = fmtTime(duration);
+
+    // Periodic re-sync every ~4 seconds
+    _syncCheckCount++;
+    if (_syncCheckCount >= 5 && currentRoom?.playbackState?.isPlaying) {
+      _syncCheckCount = 0;
+      const state = currentRoom.playbackState;
+      const now = Date.now() + ntpOffset;
+      const elapsed = now - new Date(state.startedAt).getTime();
+      const targetSec = Math.max(0, (state.position + elapsed) / 1000);
+      if (Math.abs(cur - targetSec) > 1.0) {
+        ytPlayer.seekTo(targetSec, true);
+      }
+    }
   }, 800);
 }
 
