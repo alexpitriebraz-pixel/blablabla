@@ -299,6 +299,12 @@
             color: #27272a;
             font-size: 13px;
         }
+        .footer-links { margin-top: 8px; }
+        .footer-links a {
+            color: #555; font-size: 13px; text-decoration: none;
+            margin: 0 8px;
+        }
+        .footer-links a:hover { color: #a855f7; text-decoration: underline; }
 
         /* ── Lang Switcher ── */
         .lang-switcher {
@@ -535,6 +541,10 @@
 <!-- Footer -->
 <footer>
     <span data-i18n="footer">© 2026 BlaBlaBla. Todos os direitos reservados.</span>
+    <div class="footer-links">
+        <a href="/privacy.html" data-i18n="footer_privacy">Privacy Policy</a>
+        <a href="/terms.html" data-i18n="footer_terms">Terms of Service</a>
+    </div>
 </footer>
 
 <script>
@@ -562,6 +572,8 @@ const i18n = {
         cta_desc:      'Expermente agora no seu browser.',
         cta_btn:       'Começar',
         footer:        '© 2026 BlaBlaBla. Todos os direitos reservados.',
+        footer_privacy: 'Política de Privacidade',
+        footer_terms:  'Termos de Serviço',
         page_title:    'BlaBlaBla — Música Juntos'
     },
     en: {
@@ -586,6 +598,8 @@ const i18n = {
         cta_desc:      'Try it now in your browser.',
         cta_btn:       'Get Started',
         footer:        '© 2026 BlaBlaBla. All rights reserved.',
+        footer_privacy: 'Privacy Policy',
+        footer_terms:  'Terms of Service',
         page_title:    'BlaBlaBla — Music Together'
     },
     es: {
@@ -610,6 +624,8 @@ const i18n = {
         cta_desc:      'Pruébalo ahora en tu navegador.',
         cta_btn:       'Comenzar',
         footer:        '© 2026 BlaBlaBla. Todos los derechos reservados.',
+        footer_privacy: 'Política de Privacidad',
+        footer_terms:  'Términos de Servicio',
         page_title:    'BlaBlaBla — Música Juntos'
     }
 };
