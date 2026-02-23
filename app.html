@@ -318,6 +318,13 @@
       inset: 0;
       z-index: 2;
     }
+    .no-track-placeholder {
+      position: absolute; inset: 0; z-index: 3;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(10,10,15,0.95); border-radius: 12px; gap: 10px; pointer-events: none;
+    }
+    .no-track-placeholder span:first-child { font-size: 2.5rem; }
+    .no-track-placeholder span:last-child { color: rgba(255,255,255,0.35); font-size: 0.85rem; }
 
     /* Now playing */
     .now-playing { width: 100%; max-width: 800px; text-align: center; min-height: 40px; }
@@ -633,6 +640,10 @@
         style="display:none;width:100%;height:100%;border:none;border-radius:12px;"
         allow="autoplay"></iframe>
       <div class="player-overlay" id="player-overlay"></div>
+      <div class="no-track-placeholder" id="no-track-placeholder">
+        <span>🎵</span>
+        <span>Aguardando o host escolher uma música...</span>
+      </div>
     </div>
 
     <!-- Now playing -->
@@ -1197,9 +1208,10 @@ function updateRoomUI() {
 
 function updateNowPlaying(state) {
   const hasTrack = !!state?.trackUri;
-  document.getElementById('waiting-msg').style.display   = hasTrack ? 'none'  : 'block';
-  document.getElementById('track-name').style.display    = hasTrack ? 'block' : 'none';
-  document.getElementById('track-artist').style.display  = hasTrack ? 'block' : 'none';
+  document.getElementById('waiting-msg').style.display          = hasTrack ? 'none'  : 'block';
+  document.getElementById('track-name').style.display           = hasTrack ? 'block' : 'none';
+  document.getElementById('track-artist').style.display         = hasTrack ? 'block' : 'none';
+  document.getElementById('no-track-placeholder').style.display = hasTrack ? 'none'  : 'flex';
   if (state?.trackName)   document.getElementById('track-name').textContent   = state.trackName;
   if (state?.trackArtist) document.getElementById('track-artist').textContent = state.trackArtist;
   updatePlayPauseBtn(state?.isPlaying);
