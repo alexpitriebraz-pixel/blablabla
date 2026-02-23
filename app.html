@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -545,19 +545,19 @@
     </svg>
 
     <h1 class="login-title">BlaBlaBla</h1>
-    <p class="login-subtitle">Escuta juntos, em qualquer lugar</p>
+    <p class="login-subtitle" data-i18n="login_subtitle">Listen together, anywhere</p>
 
     <div class="login-buttons">
       <div class="email-form">
-        <input type="email" id="email-input" placeholder="Email" autocomplete="email">
-        <input type="password" id="password-input" placeholder="Senha" autocomplete="current-password">
+        <input type="email" id="email-input" data-i18n-placeholder="email_placeholder" placeholder="Email" autocomplete="email">
+        <input type="password" id="password-input" data-i18n-placeholder="password_placeholder" placeholder="Password" autocomplete="current-password">
         <div class="email-form-btns">
-          <button class="email-btn-login" onclick="emailLogin()">Entrar</button>
-          <button class="email-btn-register" onclick="emailRegister()">Cadastrar</button>
+          <button class="email-btn-login" onclick="emailLogin()" data-i18n="email_login">Sign In</button>
+          <button class="email-btn-register" onclick="emailRegister()" data-i18n="email_register">Register</button>
         </div>
       </div>
 
-      <div class="login-divider">ou</div>
+      <div class="login-divider" data-i18n="or_divider">or</div>
 
       <button class="login-btn" onclick="loginWith('google')">
         <svg viewBox="0 0 24 24">
@@ -566,21 +566,21 @@
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Entrar com Google
+        <span data-i18n="login_google">Sign in with Google</span>
       </button>
 
       <button class="login-btn" onclick="loginWith('facebook')">
         <svg viewBox="0 0 24 24">
           <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
         </svg>
-        Entrar com Facebook
+        <span data-i18n="login_facebook">Sign in with Facebook</span>
       </button>
 
       <button class="login-btn" onclick="loginWith('apple')">
         <svg viewBox="0 0 24 24" fill="white">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
         </svg>
-        Entrar com Apple
+        <span data-i18n="login_apple">Sign in with Apple</span>
       </button>
     </div>
   </div>
@@ -593,27 +593,27 @@
   <div class="top-bar">
     <div class="user-info">
       <img class="user-avatar" id="user-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'/%3E" alt="">
-      <span class="user-name" id="user-name">Usuário</span>
+      <span class="user-name" id="user-name">User</span>
     </div>
-    <button class="btn-ghost" onclick="logout()">Sair</button>
+    <button class="btn-ghost" onclick="logout()" data-i18n="logout">Logout</button>
   </div>
 
   <div class="home-content">
     <h2 class="home-title">BlaBlaBla</h2>
 
     <div class="card">
-      <h3>🎵 Criar Sala</h3>
-      <p>Crie uma sala e compartilhe o código com seus amigos.</p>
-      <button class="btn-primary" onclick="createRoom()">Criar Nova Sala</button>
+      <h3 data-i18n="create_room_title">🎵 Create Room</h3>
+      <p data-i18n="create_room_desc">Create a room and share the code with your friends.</p>
+      <button class="btn-primary" onclick="createRoom()" data-i18n="create_room_btn">Create New Room</button>
     </div>
 
     <div class="card">
-      <h3>🎧 Entrar numa Sala</h3>
-      <p>Digite o código de 6 caracteres compartilhado por um amigo.</p>
+      <h3 data-i18n="join_room_title">🎧 Join Room</h3>
+      <p data-i18n="join_room_desc">Enter the 6-character code shared by a friend.</p>
       <div class="input-row">
-        <input type="text" id="input-room-code" placeholder="Ex: AB12CD" maxlength="6"
+        <input type="text" id="input-room-code" data-i18n-placeholder="room_code_placeholder" placeholder="Ex: AB12CD" maxlength="6"
                onkeypress="if(event.key==='Enter') joinRoom()">
-        <button onclick="joinRoom()">Entrar</button>
+        <button onclick="joinRoom()" data-i18n="join_btn">Join</button>
       </div>
     </div>
   </div>
@@ -626,9 +626,9 @@
   <div class="room-header">
     <div class="room-header-left">
       <span class="room-code-badge" id="room-code">------</span>
-      <span class="room-members-count" id="member-count">0 membros</span>
+      <span class="room-members-count" id="member-count">0</span>
     </div>
-    <button class="btn-leave" onclick="leaveRoom()">↩ Sair</button>
+    <button class="btn-leave" onclick="leaveRoom()" data-i18n="leave_btn">↩ Leave</button>
   </div>
 
   <div class="room-body">
@@ -642,13 +642,13 @@
       <div class="player-overlay" id="player-overlay"></div>
       <div class="no-track-placeholder" id="no-track-placeholder">
         <span>🎵</span>
-        <span>Aguardando o host escolher uma música...</span>
+        <span data-i18n="waiting_host">Waiting for the host to pick a song...</span>
       </div>
     </div>
 
     <!-- Now playing -->
     <div class="now-playing" id="now-playing">
-      <p class="waiting-msg" id="waiting-msg">Aguardando o host escolher uma música...</p>
+      <p class="waiting-msg" id="waiting-msg" data-i18n="waiting_host">Waiting for the host to pick a song...</p>
       <p class="track-name"   id="track-name"   style="display:none"></p>
       <p class="track-artist" id="track-artist" style="display:none"></p>
     </div>
@@ -671,13 +671,13 @@
       <input type="range" id="volume-slider" value="100" min="0" max="100">
     </div>
 
-    <!-- Busca -->
+    <!-- Search -->
     <div class="search-section" id="search-section">
-      <h4>🔍 Buscar Músicas</h4>
+      <h4 data-i18n="search_title">🔍 Search Music</h4>
       <div class="search-row">
-        <input type="text" id="search-input" placeholder="Música, link do YouTube ou SoundCloud…"
+        <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Song name, YouTube or SoundCloud link…"
                onkeypress="if(event.key==='Enter') searchYouTube()">
-        <button onclick="searchYouTube()">Buscar</button>
+        <button onclick="searchYouTube()" data-i18n="search_btn">Search</button>
       </div>
       <div class="search-results" id="search-results"></div>
     </div>
@@ -690,17 +690,128 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Autoplay gate (aparece se o browser bloqueio autoplay) -->
+<!-- Autoplay gate -->
 <div class="autoplay-gate" id="autoplay-gate">
-  <h2>🎵 Pronto para ouvir?</h2>
-  <p>Toque no botão para permitir a reprodução de áudio no seu dispositivo.</p>
-  <button onclick="dismissAutoplayGate()">Iniciar</button>
+  <h2 data-i18n="autoplay_title">🎵 Ready to listen?</h2>
+  <p data-i18n="autoplay_desc">Tap the button to enable audio playback on your device.</p>
+  <button onclick="dismissAutoplayGate()" data-i18n="autoplay_btn">Start</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════ -->
 <script>
+// ═══════════════════════════════════════════
+// i18n
+// ═══════════════════════════════════════════
+const TRANSLATIONS = {
+  en: {
+    login_subtitle: 'Listen together, anywhere',
+    email_placeholder: 'Email', password_placeholder: 'Password',
+    email_login: 'Sign In', email_register: 'Register', or_divider: 'or',
+    email_fill_fields: 'Please fill in email and password',
+    email_pass_min: 'Password must be at least 6 characters',
+    login_google: 'Sign in with Google', login_facebook: 'Sign in with Facebook', login_apple: 'Sign in with Apple',
+    logout: 'Logout',
+    create_room_title: '🎵 Create Room',
+    create_room_desc: 'Create a room and share the code with your friends.',
+    create_room_btn: 'Create New Room',
+    join_room_title: '🎧 Join Room',
+    join_room_desc: 'Enter the 6-character code shared by a friend.',
+    room_code_placeholder: 'Ex: AB12CD', join_btn: 'Join', leave_btn: '↩ Leave',
+    waiting_host: 'Waiting for the host to pick a song...',
+    search_title: '🔍 Search Music',
+    search_placeholder: 'Song name, YouTube or SoundCloud link…',
+    search_btn: 'Search', searching: 'Searching…', no_results: 'No results found.',
+    autoplay_title: '🎵 Ready to listen?',
+    autoplay_desc: 'Tap the button to enable audio playback on your device.',
+    autoplay_btn: 'Start',
+    toast_host_only: 'Only the host can choose the song',
+    toast_disconnected: 'Disconnected from server',
+    toast_error_room: 'Error creating room',
+    toast_error_search: 'Search error', toast_yt_error: 'Error loading video',
+    toast_code_6: 'Code must be 6 characters',
+    you: 'You',
+    n_members: (n) => `${n} member${n !== 1 ? 's' : ''}`,
+  },
+  pt: {
+    login_subtitle: 'Escuta juntos, em qualquer lugar',
+    email_placeholder: 'Email', password_placeholder: 'Senha',
+    email_login: 'Entrar', email_register: 'Cadastrar', or_divider: 'ou',
+    email_fill_fields: 'Preencha email e senha',
+    email_pass_min: 'Senha deve ter pelo menos 6 caracteres',
+    login_google: 'Entrar com Google', login_facebook: 'Entrar com Facebook', login_apple: 'Entrar com Apple',
+    logout: 'Sair',
+    create_room_title: '🎵 Criar Sala',
+    create_room_desc: 'Crie uma sala e compartilhe o código com seus amigos.',
+    create_room_btn: 'Criar Nova Sala',
+    join_room_title: '🎧 Entrar numa Sala',
+    join_room_desc: 'Digite o código de 6 caracteres compartilhado por um amigo.',
+    room_code_placeholder: 'Ex: AB12CD', join_btn: 'Entrar', leave_btn: '↩ Sair',
+    waiting_host: 'Aguardando o host escolher uma música...',
+    search_title: '🔍 Buscar Músicas',
+    search_placeholder: 'Música, link do YouTube ou SoundCloud…',
+    search_btn: 'Buscar', searching: 'Buscando…', no_results: 'Nenhum resultado encontrado.',
+    autoplay_title: '🎵 Pronto para ouvir?',
+    autoplay_desc: 'Toque no botão para permitir a reprodução de áudio.',
+    autoplay_btn: 'Iniciar',
+    toast_host_only: 'Apenas o host pode escolher a música',
+    toast_disconnected: 'Desconectado do servidor',
+    toast_error_room: 'Erro ao criar sala',
+    toast_error_search: 'Erro na busca', toast_yt_error: 'Erro ao carregar vídeo',
+    toast_code_6: 'Código deve ter 6 caracteres',
+    you: 'Você',
+    n_members: (n) => `${n} membro${n !== 1 ? 's' : ''}`,
+  },
+  es: {
+    login_subtitle: 'Escucha juntos, en cualquier lugar',
+    email_placeholder: 'Email', password_placeholder: 'Contraseña',
+    email_login: 'Iniciar sesión', email_register: 'Registrarse', or_divider: 'o',
+    email_fill_fields: 'Completa email y contraseña',
+    email_pass_min: 'La contraseña debe tener al menos 6 caracteres',
+    login_google: 'Iniciar con Google', login_facebook: 'Iniciar con Facebook', login_apple: 'Iniciar con Apple',
+    logout: 'Salir',
+    create_room_title: '🎵 Crear Sala',
+    create_room_desc: 'Crea una sala y comparte el código con tus amigos.',
+    create_room_btn: 'Crear Nueva Sala',
+    join_room_title: '🎧 Unirse a una Sala',
+    join_room_desc: 'Ingresa el código de 6 caracteres compartido por un amigo.',
+    room_code_placeholder: 'Ej: AB12CD', join_btn: 'Unirse', leave_btn: '↩ Salir',
+    waiting_host: 'Esperando que el host elija una canción...',
+    search_title: '🔍 Buscar Música',
+    search_placeholder: 'Canción, enlace de YouTube o SoundCloud…',
+    search_btn: 'Buscar', searching: 'Buscando…', no_results: 'Sin resultados.',
+    autoplay_title: '🎵 ¿Listo para escuchar?',
+    autoplay_desc: 'Toca el botón para habilitar la reproducción de audio.',
+    autoplay_btn: 'Iniciar',
+    toast_host_only: 'Solo el host puede elegir la canción',
+    toast_disconnected: 'Desconectado del servidor',
+    toast_error_room: 'Error al crear sala',
+    toast_error_search: 'Error en la búsqueda', toast_yt_error: 'Error al cargar video',
+    toast_code_6: 'El código debe tener 6 caracteres',
+    you: 'Tú',
+    n_members: (n) => `${n} miembro${n !== 1 ? 's' : ''}`,
+  },
+};
+
+const _lang = (() => {
+  const l = (navigator.language || 'en').toLowerCase();
+  if (l.startsWith('pt')) return 'pt';
+  if (l.startsWith('es')) return 'es';
+  return 'en';
+})();
+
+const t = (key, ...args) => {
+  const v = (TRANSLATIONS[_lang] || TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
+  return typeof v === 'function' ? v(...args) : v;
+};
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
+}
+document.addEventListener('DOMContentLoaded', applyI18n);
+
 // ═══════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════
@@ -742,7 +853,7 @@ const auth = firebase.auth();
 auth.onAuthStateChanged((user) => {
   currentUser = user;
   if (user) {
-    document.getElementById('user-name').textContent  = user.displayName || user.email || 'Usuário';
+    document.getElementById('user-name').textContent  = user.displayName || user.email || t('you');
     if (user.photoURL) document.getElementById('user-avatar').src = user.photoURL;
     showScreen('home');
     connectSocket();
@@ -777,7 +888,7 @@ async function loginWith(provider) {
 async function emailLogin() {
   const email = document.getElementById('email-input').value.trim();
   const pass  = document.getElementById('password-input').value;
-  if (!email || !pass) { showToast('Preencha email e senha'); return; }
+  if (!email || !pass) { showToast(t('email_fill_fields')); return; }
   if (_loginBusy) return;
   _loginBusy = true;
   try {
@@ -790,8 +901,8 @@ async function emailLogin() {
 async function emailRegister() {
   const email = document.getElementById('email-input').value.trim();
   const pass  = document.getElementById('password-input').value;
-  if (!email || !pass) { showToast('Preencha email e senha'); return; }
-  if (pass.length < 6) { showToast('Senha deve ter pelo menos 6 caracteres'); return; }
+  if (!email || !pass) { showToast(t('email_fill_fields')); return; }
+  if (pass.length < 6) { showToast(t('email_pass_min')); return; }
   if (_loginBusy) return;
   _loginBusy = true;
   try {
@@ -866,7 +977,7 @@ function connectSocket() {
 
   socket.on('error', ({ message }) => showToast(message));
 
-  socket.on('disconnect', () => showToast('Desconectado do servidor'));
+  socket.on('disconnect', () => showToast(t('toast_disconnected')));
 }
 
 function disconnectSocket() {
@@ -883,7 +994,7 @@ async function createRoom() {
       method:  'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
-    if (!res.ok) throw new Error('Erro ao criar sala');
+    if (!res.ok) throw new Error(t('toast_error_room'));
     const room = await res.json();
     socket.emit('join_room', { code: room.code });
   } catch (err) {
@@ -893,7 +1004,7 @@ async function createRoom() {
 
 function joinRoom() {
   const code = document.getElementById('input-room-code').value.trim().toUpperCase();
-  if (!code || code.length !== 6) return showToast('Código deve ter 6 caracteres');
+  if (!code || code.length !== 6) return showToast(t('toast_code_6'));
   socket.emit('join_room', { code });
 }
 
@@ -975,7 +1086,7 @@ window.onYouTubeIframeAPIReady = function () {
           }
         }
       },
-      onError: () => showToast('Erro ao carregar vídeo'),
+      onError: () => showToast(t('toast_yt_error')),
     },
   });
 };
@@ -1044,7 +1155,7 @@ function togglePlayPause() {
 }
 
 function playTrack(videoId, title, channelTitle) {
-  if (!isHost) return showToast('Apenas o host pode escolher a música');
+  if (!isHost) return showToast(t('toast_host_only'));
   socket.emit('play', { trackUri: videoId, trackName: title, trackArtist: channelTitle });
 }
 
@@ -1067,14 +1178,14 @@ async function searchYouTube() {
   if (vid) { playTrack(vid, 'Vídeo do YouTube', 'YouTube'); return; }
 
   const el = document.getElementById('search-results');
-  el.innerHTML = '<p style="color:rgba(255,255,255,0.35);font-size:14px">Buscando…</p>';
+  el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:14px">${t('searching')}</p>`;
 
   try {
     const token = await currentUser.getIdToken();
     const res   = await fetch(BACKEND_URL + `/api/youtube/search?q=${encodeURIComponent(input)}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error('Erro na busca');
+    if (!res.ok) throw new Error(t('toast_error_search'));
     renderResults(await res.json());
   } catch (err) {
     el.innerHTML = `<p style="color:#ec4899;font-size:14px">Erro: ${err.message}</p>`;
@@ -1099,7 +1210,7 @@ function escapeHtml(s) {
 function renderResults(results) {
   const el = document.getElementById('search-results');
   if (!results.length) {
-    el.innerHTML = '<p style="color:rgba(255,255,255,0.35);font-size:14px">Nenhum resultado encontrado.</p>';
+    el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:14px">${t('no_results')}</p>`;
     return;
   }
   el.innerHTML = results.map(r => `
@@ -1195,7 +1306,7 @@ function showToast(msg) {
 function updateRoomUI() {
   document.getElementById('room-code').textContent    = currentRoom?.code || '------';
   const n = currentRoom?.members?.length || 0;
-  document.getElementById('member-count').textContent = `${n} membro${n !== 1 ? 's' : ''}`;
+  document.getElementById('member-count').textContent = t('n_members', n);
 
   // Controles do host
   document.getElementById('host-controls').style.display = isHost ? 'flex' : 'none';
@@ -1225,7 +1336,7 @@ function updateMembersUI() {
   document.getElementById('members-list').innerHTML = (currentRoom?.members || []).map(uid => {
     const isMe   = uid === currentUser.uid;
     const isHostMember = uid === currentRoom.hostId;
-    const label  = isMe ? 'Você' : uid.slice(0, 8) + '…';
+    const label  = isMe ? t('you') : uid.slice(0, 8) + '…';
     return `<span class="member-badge ${isHostMember ? 'is-host' : ''}">${label}${isHostMember ? ' ★' : ''}</span>`;
   }).join('');
 }
