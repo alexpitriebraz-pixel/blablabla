@@ -757,6 +757,10 @@
     <!-- Player -->
     <div class="player-wrapper">
       <div id="youtube-player"></div>
+      <iframe id="sc-player-iframe"
+        src="https://w.soundcloud.com/player/?url=&auto_play=false&visual=true&buying=false&sharing=false&download=false&show_comments=false&show_playcount=false&show_user=false&color=%237c3aed"
+        style="display:none;width:100%;height:100%;border:none;border-radius:12px;"
+        allow="autoplay"></iframe>
       <div class="player-overlay" id="player-overlay"></div>
     </div>
 
@@ -846,7 +850,7 @@ const TRANSLATIONS = {
     join_btn: 'Join',
     logout: 'Logout',
     search_title: '🔍 Search Music',
-    search_placeholder: 'Song name or YouTube link...',
+    search_placeholder: 'Song name, YouTube or SoundCloud link...',
     search_btn: 'Search',
     members_title: 'Members',
     waiting_host: 'Waiting for the host to pick a song...',
@@ -887,7 +891,7 @@ const TRANSLATIONS = {
     join_btn: 'Entrar',
     logout: 'Sair',
     search_title: '🔍 Buscar Músicas',
-    search_placeholder: 'Nome da música ou link do YouTube...',
+    search_placeholder: 'Música, link do YouTube ou SoundCloud...',
     search_btn: 'Buscar',
     members_title: 'Membros',
     waiting_host: 'Aguardando o host escolher uma música...',
@@ -928,7 +932,7 @@ const TRANSLATIONS = {
     join_btn: 'Unirse',
     logout: 'Salir',
     search_title: '🔍 Buscar Música',
-    search_placeholder: 'Nombre de canción o enlace de YouTube...',
+    search_placeholder: 'Canción, enlace de YouTube o SoundCloud...',
     search_btn: 'Buscar',
     members_title: 'Miembros',
     waiting_host: 'Esperando que el host elija una canción...',
@@ -1309,8 +1313,41 @@ function copyRoomCode() {
 }
 
 // ═══════════════════════════════════════════
-// YOUTUBE PLAYER
+// PLAYER (YouTube + SoundCloud)
 // ═══════════════════════════════════════════
+
+// ── SoundCloud ──────────────────────────────
+let scWidget = null, scReady = false, _scPos = 0, _scDuration = 0, _scCurrentUrl = null;
+
+function isSoundCloudUrl(uri) {
+  try { return new URL(uri).hostname.includes('soundcloud.com'); } catch { return false; }
+}
+
+function loadSCScript() {
+  return new Promise(resolve => {
+    if (window.SC) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://w.soundcloud.com/player/api.js';
+    s.onload = resolve;
+    document.head.appendChild(s);
+  });
+}
+
+async function initSCWidget() {
+  await loadSCScript();
+  const iframe = document.getElementById('sc-player-iframe');
+  scWidget = SC.Widget(iframe);
+  scWidget.bind(SC.Widget.Events.READY, () => {
+    scReady = true;
+  });
+  scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, (e) => {
+    _scPos      = (e.currentPosition || 0) / 1000;
+    _scDuration = (e.soundDuration   || 0) / 1000;
+  });
+}
+initSCWidget();
+
+// ── YouTube ──────────────────────────────────
 (function() {
   const s = document.createElement('script');
   s.src = 'https://www.youtube.com/iframe_api';
@@ -1345,36 +1382,69 @@ window.onYouTubeIframeAPIReady = function () {
   });
 };
 
+function calcTargetSec(state) {
+  if (state.isPlaying) {
+    const elapsed = Date.now() + ntpOffset - new Date(state.startedAt).getTime();
+    return Math.max(0, (state.position + elapsed) / 1000);
+  }
+  return Math.max(0, state.position / 1000);
+}
+
+function showYTPlayer()  {
+  document.getElementById('youtube-player').style.display   = '';
+  document.getElementById('sc-player-iframe').style.display = 'none';
+}
+function showSCPlayer()  {
+  document.getElementById('youtube-player').style.display   = 'none';
+  document.getElementById('sc-player-iframe').style.display = '';
+}
+
 function syncPlayer(state) {
-  if (!ytPlayer || !ytReady) { pendingSync = state; return; }
+  const uri = state.trackUri;
+  if (!uri) return;
 
-  const videoId = state.trackUri;
-  if (!videoId) return;
+  const targetSec = calcTargetSec(state);
 
-  let targetSec;
-  if (state.isPlaying) {
-    const now     = Date.now() + ntpOffset;
-    const elapsed = now - new Date(state.startedAt).getTime();
-    targetSec     = (state.position + elapsed) / 1000;
+  if (isSoundCloudUrl(uri)) {
+    // ── SoundCloud ──────────────────────────
+    if (!scWidget || !scReady) { pendingSync = state; return; }
+    showSCPlayer();
+
+    if (_scCurrentUrl !== uri) {
+      _scCurrentUrl = uri;
+      scWidget.load(uri, {
+        auto_play: state.isPlaying,
+        buying: false, sharing: false, download: false,
+        show_comments: false, visual: true, start_track: 0,
+      });
+      if (targetSec > 0) {
+        setTimeout(() => scWidget.seekTo(targetSec * 1000), 1500);
+      }
+    } else {
+      scWidget.seekTo(targetSec * 1000);
+      if (state.isPlaying) scWidget.play(); else scWidget.pause();
+    }
+    if (state.isPlaying) startSilentAudio(); else stopSilentAudio();
+
   } else {
-    targetSec = state.position / 1000;
-  }
-  targetSec = Math.max(0, targetSec);
+    // ── YouTube ─────────────────────────────
+    if (!ytPlayer || !ytReady) { pendingSync = state; return; }
+    showYTPlayer();
 
-  const curVid = ytPlayer.getVideoData?.()?.videoId;
-  if (curVid !== videoId) {
-    ytPlayer.loadVideoById({ videoId, startSeconds: targetSec });
-    curVideoId = videoId;
-  } else {
-    ytPlayer.seekTo(targetSec, true);
-  }
-
-  if (state.isPlaying) {
-    ytPlayer.playVideo();
-    startSilentAudio(); // Keep audio session alive for background playback
-  } else {
-    ytPlayer.pauseVideo();
-    stopSilentAudio();
+    const curVid = ytPlayer.getVideoData?.()?.videoId;
+    if (curVid !== uri) {
+      ytPlayer.loadVideoById({ videoId: uri, startSeconds: targetSec });
+      curVideoId = uri;
+    } else {
+      ytPlayer.seekTo(targetSec, true);
+    }
+    if (state.isPlaying) {
+      ytPlayer.playVideo();
+      startSilentAudio();
+    } else {
+      ytPlayer.pauseVideo();
+      stopSilentAudio();
+    }
   }
 
   updatePlayPauseBtn(state.isPlaying);
@@ -1401,9 +1471,18 @@ async function searchYouTube() {
   const input = document.getElementById('search-input').value.trim();
   if (!input) return;
 
+  // SoundCloud URL — play directly
+  if (isSoundCloudUrl(input)) {
+    playTrack(input, 'SoundCloud Track', 'SoundCloud');
+    document.getElementById('search-results').innerHTML = '';
+    return;
+  }
+
+  // YouTube URL — extract video ID
   const vid = extractVideoId(input);
   if (vid) { playTrack(vid, 'YouTube Video', 'YouTube'); return; }
 
+  // Text search via YouTube API
   const el = document.getElementById('search-results');
   el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:13px">${t('searching')}</p>`;
 
@@ -1472,23 +1551,34 @@ let _syncCheckCount = 0;
 function startSeekTimer() {
   if (seekTimer) clearInterval(seekTimer);
   seekTimer = setInterval(() => {
-    if (!ytPlayer || !ytReady) return;
-    const cur = ytPlayer.getCurrentTime() || 0;
-    duration  = ytPlayer.getDuration()    || 0;
-    if (duration > 0) document.getElementById('seekbar').value = (cur / duration) * 100;
-    document.getElementById('time-current').textContent  = fmtTime(cur);
-    document.getElementById('time-duration').textContent = fmtTime(duration);
+    const state = currentRoom?.playbackState;
+    const uri   = state?.trackUri;
+    const isSC  = uri && isSoundCloudUrl(uri);
 
-    // Periodic re-sync every ~4 seconds (every 5th tick at 800ms)
+    let cur = 0, dur = 0;
+    if (isSC) {
+      cur = _scPos; dur = _scDuration;
+    } else {
+      if (!ytPlayer || !ytReady) return;
+      cur = ytPlayer.getCurrentTime() || 0;
+      dur = ytPlayer.getDuration()    || 0;
+    }
+    duration = dur;
+    if (dur > 0) document.getElementById('seekbar').value = (cur / dur) * 100;
+    document.getElementById('time-current').textContent  = fmtTime(cur);
+    document.getElementById('time-duration').textContent = fmtTime(dur);
+
+    // Periodic re-sync every ~4s
     _syncCheckCount++;
-    if (_syncCheckCount >= 5 && currentRoom?.playbackState?.isPlaying) {
+    if (_syncCheckCount >= 5 && state?.isPlaying) {
       _syncCheckCount = 0;
-      const state = currentRoom.playbackState;
-      const now = Date.now() + ntpOffset;
-      const elapsed = now - new Date(state.startedAt).getTime();
-      const targetSec = Math.max(0, (state.position + elapsed) / 1000);
+      const targetSec = calcTargetSec(state);
       if (Math.abs(cur - targetSec) > 1.0) {
-        ytPlayer.seekTo(targetSec, true);
+        if (isSC && scWidget && scReady) {
+          scWidget.seekTo(targetSec * 1000);
+        } else if (!isSC && ytPlayer && ytReady) {
+          ytPlayer.seekTo(targetSec, true);
+        }
       }
     }
   }, 800);
