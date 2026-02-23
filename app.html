@@ -78,6 +78,40 @@
     }
     .login-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
 
+    /* Email login form */
+    .email-form { display: flex; flex-direction: column; gap: 10px; width: 280px; }
+    .email-form input {
+      width: 100%; padding: 13px 16px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+      background: rgba(255,255,255,0.04); color: white;
+      font-size: 15px; font-family: 'Inter', sans-serif;
+      outline: none; box-sizing: border-box;
+    }
+    .email-form input::placeholder { color: rgba(255,255,255,0.35); }
+    .email-form input:focus { border-color: rgba(124,58,237,0.6); }
+    .email-form-btns { display: flex; gap: 8px; }
+    .email-form-btns button {
+      flex: 1; padding: 13px; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: all 0.2s;
+    }
+    .email-btn-login {
+      background: linear-gradient(135deg, #7c3aed, #a855f7); color: white;
+    }
+    .email-btn-login:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+    .email-btn-register {
+      background: transparent; color: #a855f7;
+      border: 1px solid rgba(124,58,237,0.5) !important;
+    }
+    .email-btn-register:hover { background: rgba(124,58,237,0.1); }
+    .login-divider {
+      display: flex; align-items: center; gap: 12px;
+      width: 280px; margin: 4px 0; color: rgba(255,255,255,0.35); font-size: 13px;
+    }
+    .login-divider::before, .login-divider::after {
+      content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1);
+    }
+
     .login-btn {
       display: flex;
       align-items: center;
@@ -507,6 +541,17 @@
     <p class="login-subtitle">Escuta juntos, em qualquer lugar</p>
 
     <div class="login-buttons">
+      <div class="email-form">
+        <input type="email" id="email-input" placeholder="Email" autocomplete="email">
+        <input type="password" id="password-input" placeholder="Senha" autocomplete="current-password">
+        <div class="email-form-btns">
+          <button class="email-btn-login" onclick="emailLogin()">Entrar</button>
+          <button class="email-btn-register" onclick="emailRegister()">Cadastrar</button>
+        </div>
+      </div>
+
+      <div class="login-divider">ou</div>
+
       <button class="login-btn" onclick="loginWith('google')">
         <svg viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -682,7 +727,7 @@ const auth = firebase.auth();
 auth.onAuthStateChanged((user) => {
   currentUser = user;
   if (user) {
-    document.getElementById('user-name').textContent  = user.displayName || 'Usuário';
+    document.getElementById('user-name').textContent  = user.displayName || user.email || 'Usuário';
     if (user.photoURL) document.getElementById('user-avatar').src = user.photoURL;
     showScreen('home');
     connectSocket();
@@ -712,6 +757,33 @@ async function loginWith(provider) {
   } finally {
     _loginBusy = false;
   }
+}
+
+async function emailLogin() {
+  const email = document.getElementById('email-input').value.trim();
+  const pass  = document.getElementById('password-input').value;
+  if (!email || !pass) { showToast('Preencha email e senha'); return; }
+  if (_loginBusy) return;
+  _loginBusy = true;
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch (err) {
+    showToast(err.message || 'Login failed');
+  } finally { _loginBusy = false; }
+}
+
+async function emailRegister() {
+  const email = document.getElementById('email-input').value.trim();
+  const pass  = document.getElementById('password-input').value;
+  if (!email || !pass) { showToast('Preencha email e senha'); return; }
+  if (pass.length < 6) { showToast('Senha deve ter pelo menos 6 caracteres'); return; }
+  if (_loginBusy) return;
+  _loginBusy = true;
+  try {
+    await auth.createUserWithEmailAndPassword(email, pass);
+  } catch (err) {
+    showToast(err.message || 'Register failed');
+  } finally { _loginBusy = false; }
 }
 
 async function logout() {

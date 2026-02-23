@@ -125,6 +125,41 @@
     }
     .login-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
 
+    /* Email login form */
+    .email-form { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+    .email-form input {
+      width: 100%; padding: 13px 16px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); color: white;
+      font-size: 15px; font-family: 'Inter', sans-serif;
+      outline: none; box-sizing: border-box;
+    }
+    .email-form input::placeholder { color: var(--text-muted); }
+    .email-form input:focus { border-color: var(--purple); }
+    .email-form-btns { display: flex; gap: 8px; }
+    .email-form-btns button {
+      flex: 1; padding: 13px; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: all 0.2s;
+    }
+    .email-btn-login {
+      background: var(--purple); color: white;
+    }
+    .email-btn-login:active { background: #6d28d9; transform: scale(0.98); }
+    .email-btn-register {
+      background: transparent; color: var(--purple);
+      border: 1px solid var(--purple) !important;
+    }
+    .email-btn-register:active { background: rgba(124,58,237,0.1); transform: scale(0.98); }
+
+    .login-divider {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; margin: 4px 0; color: var(--text-muted); font-size: 13px;
+    }
+    .login-divider::before, .login-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
     /* ═══════════════════════════════════════════
        NAV BAR (shared by Home & Room)
        ═══════════════════════════════════════════ */
@@ -556,6 +591,26 @@
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* PiP mode — show only the video player */
+    .pip-mode .top-bar,
+    .pip-mode .player-controls,
+    .pip-mode .search-section,
+    .pip-mode .room-header,
+    .pip-mode .bottom-bar,
+    .pip-mode #track-name,
+    .pip-mode #track-artist,
+    .pip-mode #waiting-msg,
+    .pip-mode #host-controls,
+    .pip-mode #player-overlay { display: none !important; }
+    .pip-mode .player-section {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      margin: 0; padding: 0; border-radius: 0;
+    }
+    .pip-mode #yt-player-wrap {
+      width: 100% !important; height: 100% !important;
+      border-radius: 0;
+    }
   </style>
 </head>
 <body>
@@ -587,6 +642,17 @@
     <p class="login-subtitle" data-i18n="login_subtitle">Listen together, anywhere</p>
 
     <div class="login-buttons">
+      <div class="email-form">
+        <input type="email" id="email-input" placeholder="Email" data-i18n-placeholder="email_placeholder" autocomplete="email">
+        <input type="password" id="password-input" placeholder="Password" data-i18n-placeholder="password_placeholder" autocomplete="current-password">
+        <div class="email-form-btns">
+          <button class="email-btn-login" onclick="emailLogin()" data-i18n="email_login">Sign In</button>
+          <button class="email-btn-register" onclick="emailRegister()" data-i18n="email_register">Register</button>
+        </div>
+      </div>
+
+      <div class="login-divider"><span data-i18n="or_divider">or</span></div>
+
       <button class="login-btn" onclick="loginWith('google')">
         <svg viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -759,6 +825,13 @@
 const TRANSLATIONS = {
   en: {
     login_subtitle: 'Listen together, anywhere',
+    email_placeholder: 'Email',
+    password_placeholder: 'Password',
+    email_login: 'Sign In',
+    email_register: 'Register',
+    or_divider: 'or',
+    email_fill_fields: 'Please fill in email and password',
+    email_pass_min: 'Password must be at least 6 characters',
     login_google: 'Sign in with Google',
     login_facebook: 'Sign in with Facebook',
     login_apple: 'Sign in with Apple',
@@ -793,6 +866,13 @@ const TRANSLATIONS = {
   },
   pt: {
     login_subtitle: 'Escuta juntos, em qualquer lugar',
+    email_placeholder: 'Email',
+    password_placeholder: 'Senha',
+    email_login: 'Entrar',
+    email_register: 'Cadastrar',
+    or_divider: 'ou',
+    email_fill_fields: 'Preencha email e senha',
+    email_pass_min: 'Senha deve ter pelo menos 6 caracteres',
     login_google: 'Entrar com Google',
     login_facebook: 'Entrar com Facebook',
     login_apple: 'Entrar com Apple',
@@ -827,6 +907,13 @@ const TRANSLATIONS = {
   },
   es: {
     login_subtitle: 'Escucha juntos, en cualquier lugar',
+    email_placeholder: 'Email',
+    password_placeholder: 'Contraseña',
+    email_login: 'Iniciar sesión',
+    email_register: 'Registrarse',
+    or_divider: 'o',
+    email_fill_fields: 'Completa email y contraseña',
+    email_pass_min: 'La contraseña debe tener al menos 6 caracteres',
     login_google: 'Iniciar con Google',
     login_facebook: 'Iniciar con Facebook',
     login_apple: 'Iniciar con Apple',
@@ -924,9 +1011,46 @@ const auth = firebase.auth();
 // Detect if running inside Capacitor native app
 const isCapacitor = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform();
 
-// Initialize background mode (keeps audio playing when app is minimized)
+// ─── Background audio keep-alive ─────────────────────────────────
+// Silent audio element that keeps the audio session alive when backgrounded.
+// Without this, Android WebView pauses all <video>/<audio> in the iframe.
+let _silentAudio = null;
+function startSilentAudio() {
+  if (_silentAudio) return;
+  _silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+  _silentAudio.loop = true;
+  _silentAudio.volume = 0.01;
+  _silentAudio.play().catch(() => {});
+}
+function stopSilentAudio() {
+  if (_silentAudio) { _silentAudio.pause(); _silentAudio = null; }
+}
+
+// ─── Media Session (lock screen / notification controls) ─────────
+function updateMediaSession(title, artist, playing) {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: title || 'BlaBlaBla',
+      artist: artist || '',
+      album: 'BlaBlaBla',
+    });
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+  } catch (e) {}
+}
+if ('mediaSession' in navigator) {
+  try {
+    navigator.mediaSession.setActionHandler('play', () => {
+      if (isHost && socket) socket.emit('resume');
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      if (isHost && socket) socket.emit('pause');
+    });
+  } catch (e) {}
+}
+
+// ─── Background mode plugin (foreground service) ─────────────────
 let BackgroundMode = null;
-let MediaSession = null;
 if (isCapacitor) {
   try {
     BackgroundMode = Capacitor.registerPlugin('BackgroundMode');
@@ -939,17 +1063,13 @@ if (isCapacitor) {
       silent: false
     });
   } catch (e) { console.warn('BackgroundMode init:', e); }
+}
 
-  try {
-    MediaSession = Capacitor.registerPlugin('MediaSession');
-    // Handle notification control buttons
-    MediaSession.setActionHandler({ action: 'play' }, () => {
-      if (isHost && socket) socket.emit('resume');
-    });
-    MediaSession.setActionHandler({ action: 'pause' }, () => {
-      if (isHost && socket) socket.emit('pause');
-    });
-  } catch (e) { console.warn('MediaSession init:', e); }
+// ─── Picture-in-Picture mode handler ─────────────────────────────
+let _inPiP = false;
+function onPiPChanged(isPiP) {
+  _inPiP = isPiP;
+  document.body.classList.toggle('pip-mode', isPiP);
 }
 
 // Initialize native Google Sign-In plugin (Capacitor only)
@@ -1019,6 +1139,33 @@ async function loginWith(provider) {
   } finally {
     _loginBusy = false;
   }
+}
+
+async function emailLogin() {
+  const email = document.getElementById('email-input').value.trim();
+  const pass  = document.getElementById('password-input').value;
+  if (!email || !pass) { showToast(t('email_fill_fields')); return; }
+  if (_loginBusy) return;
+  _loginBusy = true;
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch (err) {
+    showToast(err.message || 'Login failed');
+  } finally { _loginBusy = false; }
+}
+
+async function emailRegister() {
+  const email = document.getElementById('email-input').value.trim();
+  const pass  = document.getElementById('password-input').value;
+  if (!email || !pass) { showToast(t('email_fill_fields')); return; }
+  if (pass.length < 6) { showToast(t('email_pass_min')); return; }
+  if (_loginBusy) return;
+  _loginBusy = true;
+  try {
+    await auth.createUserWithEmailAndPassword(email, pass);
+  } catch (err) {
+    showToast(err.message || 'Register failed');
+  } finally { _loginBusy = false; }
 }
 
 async function logout() {
@@ -1222,10 +1369,16 @@ function syncPlayer(state) {
     ytPlayer.seekTo(targetSec, true);
   }
 
-  if (state.isPlaying) ytPlayer.playVideo();
-  else                  ytPlayer.pauseVideo();
+  if (state.isPlaying) {
+    ytPlayer.playVideo();
+    startSilentAudio(); // Keep audio session alive for background playback
+  } else {
+    ytPlayer.pauseVideo();
+    stopSilentAudio();
+  }
 
   updatePlayPauseBtn(state.isPlaying);
+  updateMediaSession(state.trackName, state.trackArtist, state.isPlaying);
 }
 
 // ═══════════════════════════════════════════
@@ -1381,17 +1534,8 @@ function updateNowPlaying(state) {
   updatePlayPauseBtn(state?.isPlaying);
 
   // Update media session notification (lock screen / notification controls)
-  if (MediaSession && hasTrack) {
-    try {
-      MediaSession.setMetadata({
-        title: state.trackName || 'BlaBlaBla',
-        artist: state.trackArtist || '',
-        album: 'BlaBlaBla'
-      });
-      MediaSession.setPlaybackState({
-        playbackState: state.isPlaying ? 'playing' : 'paused'
-      });
-    } catch (e) {}
+  if (hasTrack) {
+    updateMediaSession(state.trackName, state.trackArtist, state.isPlaying);
   }
 }
 
