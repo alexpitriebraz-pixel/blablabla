@@ -1,7 +1,20 @@
 node_modules/
 backend/node_modules/
 backend/.env
+.render-api.env
+.cloudflare-api.env
+play-console-key.json
 www/
-android/
-ios/
-*.jks
+
+# Android — ignorar só build artifacts e chave de assinatura
+android/.gradle/
+android/build/
+android/app/build/
+android/app/*.jks
+android/app/*.keystore
+
+# iOS — ignorar só Pods e chaves privadas
+ios/App/Pods/
+ios/App/App/public/
+ios/**/*.p8
+ios/capacitor-cordova-ios-plugins/

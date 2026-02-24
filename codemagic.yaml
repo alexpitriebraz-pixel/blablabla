@@ -1,6 +1,8 @@
 workflows:
+
+  # ─── Android Debug APK ──────────────────────────────────────────────────────
   android-build:
-    name: Android Build
+    name: Android Build (Debug)
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
@@ -21,33 +23,70 @@ workflows:
     artifacts:
       - android/app/build/outputs/**/*.apk
 
-  ios-build:
-    name: iOS Build
-    max_build_duration: 30
+  # ─── iOS App Store Build ────────────────────────────────────────────────────
+  ios-release:
+    name: iOS Release (App Store)
+    max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
       xcode: latest
       node: 20
       cocoapods: default
+      groups:
+        - ios_signing   # APP_STORE_CONNECT_KEY_IDENTIFIER, ISSUER_ID, PRIVATE_KEY
+      vars:
+        BUNDLE_ID: com.blablabla.app
+        APP_NAME: BlaBlaBlaLive
+
     scripts:
+      - name: Set up keychain
+        script: keychain initialize
+
+      - name: Fetch signing files from Apple
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+
+      - name: Set Xcode code signing
+        script: xcode-project use-profiles
+
       - name: Install dependencies
         script: npm install
+
       - name: Prepare web assets
         script: node prepare.js
+
       - name: Sync Capacitor iOS
         script: npx cap sync ios
+
       - name: Install CocoaPods
         script: |
           cd ios/App
-          pod install
-      - name: Build iOS (unsigned)
+          pod install --repo-update
+
+      - name: Set build number
         script: |
-          cd ios/App
-          xcodebuild build \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -destination 'generic/platform=iOS Simulator' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO
+          BUILD_NUMBER=${CM_BUILD_NUMBER:-1}
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" ios/App/App/Info.plist
+
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace ios/App/App.xcworkspace \
+            --scheme App
+
     artifacts:
-      - ios/App/build/**/*.app
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
