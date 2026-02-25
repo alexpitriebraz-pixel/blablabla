@@ -70,7 +70,9 @@ workflows:
 
       - name: Set build number
         script: |
-          BUILD_NUMBER=${CM_BUILD_NUMBER:-1}
+          # Use git commit count — always unique and incrementing
+          BUILD_NUMBER=$(git rev-list HEAD --count)
+          echo "Build number: $BUILD_NUMBER"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" ios/App/App/Info.plist
 
