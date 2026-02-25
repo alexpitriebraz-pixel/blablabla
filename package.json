@@ -8,16 +8,13 @@
     "ios": "node prepare.js && npx cap sync ios"
   },
   "dependencies": {
-    "@anuradev/capacitor-background-mode": "^7.2.1",
     "@capacitor/android": "^6.0.0",
     "@capacitor/cli": "^6.0.0",
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.0.0",
     "@capacitor/splash-screen": "^6.0.0",
     "@capacitor/status-bar": "^6.0.0",
-    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
-    "@jofr/capacitor-media-session": "^4.0.0",
-    "googleapis": "^171.4.0"
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4"
   },
   "devDependencies": {
     "sharp": "^0.34.5"
