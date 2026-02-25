@@ -1,27 +1,48 @@
 workflows:
 
-  # ─── Android Debug APK ──────────────────────────────────────────────────────
-  android-build:
-    name: Android Build (Debug)
+  # ─── Android Release (Google Play) ──────────────────────────────────────────
+  android-release:
+    name: Android Release (Google Play)
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
       java: 17
       node: 20
+      groups:
+        - android_signing  # CM_KEYSTORE, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD, GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+
     scripts:
       - name: Install dependencies
         script: npm install
+
       - name: Prepare web assets
         script: node prepare.js
+
       - name: Sync Capacitor Android
         script: npx cap sync android
-      - name: Build Android APK
+
+      - name: Set up keystore
+        script: |
+          echo $CM_KEYSTORE | base64 --decode > android/app/release.keystore
+
+      - name: Build Android AAB (release)
         script: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=$CM_BUILD_DIR/android/app/release.keystore \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
+
     artifacts:
-      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/bundle/release/app-release.aab
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: false
 
   # ─── iOS App Store Build ────────────────────────────────────────────────────
   ios-release:
